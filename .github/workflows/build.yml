@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: asdf_install
+        uses: asdf-vm/actions/install@v1
+
+      - name: build talend open studio
+        run: ./mvnw -s .mvn/settings.xml clean install -DskipTests -Dlicense.skipAddThirdParty=true
