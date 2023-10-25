@@ -1,0 +1,178 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
+  pull_request:
+
+env:
+  # needed to access our GitHub Maven repository
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=false -Djava.awt.headless=true"
+
+jobs:
+  dependency-resolution:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Cache local Maven repository
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-
+
+      - name: asdf_install
+        uses: asdf-vm/actions/install@v3
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: download dependencies
+        id: download-dependencies
+        run: |
+          export JAVA_HOME=$(asdf where java)
+          ./mvnw -B de.qaware.maven:go-offline-maven-plugin:1.2.8:resolve-dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+
+  deploy_maven:
+    permissions: write-all
+    needs: dependency-resolution
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag' || github.ref_name == 'main'
+
+    steps:
+      - name: Strip version prefix
+        id: strip-version-prefix
+        uses: ashley-taylor/regex-property-action@v1
+        if: github.ref_type == 'tag'
+        with:
+          value: "${{ github.ref_name }}"
+          regex: "v?(.*)"
+          replacement: "$1"
+
+      - name: Replace dots
+        id: replace-dots
+        uses: ashley-taylor/regex-property-action@v1
+        if: github.ref_type == 'tag'
+        with:
+          value: "${{ steps.strip-version-prefix.outputs.value }}"
+          regex: "\\."
+          replacement: "\\."
+
+      - name: Delete tagged packages
+        uses: advanova/delete-old-packages@main
+        if: github.ref_type == 'tag'
+        with:
+          organization: advanova
+          type: maven
+          rate-limit: true
+          keep: 0
+          version-pattern: "^${{ steps.replace-dots.outputs.value }}$"
+          name-pattern: "org\\.talend\\.studio.*"
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Retrieve cached local Maven repository
+        id: cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-
+
+      - name: asdf_install
+        uses: asdf-vm/actions/install@v3
+
+      - name: build talend open studio
+        run: |
+          export JAVA_HOME=$(asdf where java)
+          ./mvnw -B clean deploy -DskipTests -Dversioning.disable=false -Dtos.products=false -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        product: ['tos.bd','tos.di','tos.dq','tos.esb']
+    runs-on: ubuntu-latest
+    needs: dependency-resolution
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Retrieve cached local Maven repository
+        id: cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-
+
+      - name: asdf_install
+        uses: asdf-vm/actions/install@v3
+
+      - name: build talend open studio
+        run: |
+          export JAVA_HOME=$(asdf where java)
+          ./mvnw -B clean install -P-nonofficial -DskipTests -D${{ matrix.product }}=true
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.product }}
+          path: 'build/storage/**'
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref_type == 'tag' || github.ref_name == 'main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: tag main branch as latest
+        if: github.ref_name == 'main'
+        run: git tag -f latest
+
+      - name: push latest tag
+        if: github.ref_name == 'main'
+        run: git push -f origin latest
+
+      - name: Delete old release
+        # Can be replaced with https://github.com/softprops/action-gh-release/pull/188 if that is implemented
+        uses: liudonghua123/delete-release-action@v1
+        with:
+          release_name: 'latest'
+          suppress_errors: true
+
+      - name: Release
+        if: github.ref_name == 'main' || github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            **/*.zip
+          prerelease: ${{ github.ref_type != 'tag' }}
+          generate_release_notes: true
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}

@@ -1,0 +1,24 @@
+[submodule "tmdm-studio-se"]
+	path = tmdm-studio-se
+	url = https://github.com/Talend/tmdm-studio-se
+[submodule "tdq-studio-se"]
+	path = tdq-studio-se
+	url = https://github.com/Talend/tdq-studio-se.git
+[submodule "studio-se-master"]
+	path = studio-se-master
+	url = https://github.com/Talend/studio-se-master.git
+[submodule "tmdm-common"]
+	path = tmdm-common
+	url = https://github.com/Talend/tmdm-common
+[submodule "tdi-studio-se"]
+	path = tdi-studio-se
+	url = https://github.com/Talend/tdi-studio-se
+[submodule "tesb-studio-se"]
+	path = tesb-studio-se
+	url = https://github.com/Talend/tesb-studio-se
+[submodule "tcommon-studio-se"]
+	path = tcommon-studio-se
+	url = https://github.com/Talend/tcommon-studio-se.git
+[submodule "tbd-studio-se"]
+	path = tbd-studio-se
+	url = https://github.com/Talend/tbd-studio-se.git
