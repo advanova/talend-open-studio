@@ -39,14 +39,16 @@ function commit_command() {
         exit 1
     fi
 
-    # Ensure that Git submodules are fetched and up to date
-    git submodule foreach git fetch --prune --tags --all --force --prune-tags
-
-    # Reset the Git submodule
-    git submodule foreach git reset --hard
-
-    # Check out a Git submodule using the extracted VERSION and PATCH
-    git submodule foreach git checkout release/"$VERSION"-"$PATCH"
+    # Reset the Git submodule and check out the release or patch branch
+    for submodule in $(git submodule status --recursive | awk '{print $2}'); do
+        (cd "$submodule" || exit 1
+            git fetch --prune --tags --all --force --prune-tags
+            git reset --hard
+            if ! git checkout release/"$VERSION"-"$PATCH"; then
+                git checkout patch/"$VERSION"/"$PATCH"
+            fi
+        )
+    done
 
     # Create a properties file with the extracted information
     echo "product.version=$VERSION" > product.properties
