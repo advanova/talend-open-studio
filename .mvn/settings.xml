@@ -56,7 +56,7 @@
             <activation>
                 <property>
                     <name>env.GITHUB_ACTIONS</name>
-                    <value>!false</value>
+                    <value>true</value>
                 </property>
             </activation>
             <repositories>
