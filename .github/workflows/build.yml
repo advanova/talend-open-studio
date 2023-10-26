@@ -8,6 +8,10 @@ on:
       - 'v*'
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   # needed to access our GitHub Maven repository
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
