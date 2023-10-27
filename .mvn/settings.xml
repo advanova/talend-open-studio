@@ -49,6 +49,9 @@
                 <buildRootDir>${maven.multiModuleProjectDirectory}/build</buildRootDir>
                 <storage>${buildRootDir}/storage</storage>
                 <product.build.id>${product.final.name}</product.build.id>
+                <repo.type>Release</repo.type>
+                <osgi.compatible.version>${base.version}</osgi.compatible.version>
+                <maven.compatible.version>${base.version}</maven.compatible.version>
             </properties>
         </profile>
         <profile>
