@@ -38,3 +38,4 @@ release.properties
 
 .cache
 build/storage
+.git-versioned-pom.xml
