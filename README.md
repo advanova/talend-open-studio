@@ -8,7 +8,6 @@ Before using this script, make sure you have the following prerequisites install
 
 - Git
 - cURL
-- Maven (if you intend to use the "build" command)
 
 ## Usage
 
@@ -35,13 +34,6 @@ The script accepts several commands and arguments as follows:
   ./talend-modules.sh update
   ```
 
-- `build`: Run the build command using Maven: `./mvnw clean install -P-nonofficial -DskipTests`.
-
-  Example:
-  ```bash
-  ./talend-modules.sh build
-  ```
-
 - `help`: Display usage instructions.
 
   Example:
@@ -54,8 +46,6 @@ The script accepts several commands and arguments as follows:
 - When using the "commit" command, the script will fetch patch information from the specified version-patch, reset the submodule to its last committed state, and then check out the submodule with the extracted version and patch. It will also create a `product.properties` file with version, patch, timestamp, release.suffix, and revision.filename and perform a Git commit using the provided version-patch as the commit message.
 
 - The "clean" command resets Git submodules to the last committed state and removes untracked files from the project's working directory, excluding files specified in `.gitignore`.
-
-- The "build" command runs the specified Maven build command for your project.
 
 - The "update" command initializes and updates Git submodules to their latest versions.
 
