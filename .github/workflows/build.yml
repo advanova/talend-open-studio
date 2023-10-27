@@ -44,7 +44,7 @@ jobs:
         id: download-dependencies
         run: |
           export JAVA_HOME=$(asdf where java)
-          ./mvnw -B de.qaware.maven:go-offline-maven-plugin:1.2.8:resolve-dependencies
+          ./mvnw -B de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
         if: steps.cache.outputs.cache-hit != 'true'
 
   deploy_maven:
